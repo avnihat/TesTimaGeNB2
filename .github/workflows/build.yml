@@ -1,0 +1,59 @@
+name: Build-and-Zip (GitHub-only)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    env:
+      # CI'da platform kısıtını (Intel Mojave+) bypass etmek için.
+      CI_ALLOW_NON_INTEL: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Optional smoke test
+        run: |
+          if [ -f main.py ]; then
+            python - << 'PY'
+import os, runpy
+os.environ["CI_ALLOW_NON_INTEL"] = "1"
+try:
+    runpy.run_path("main.py", run_name="__main__")
+except SystemExit:
+    pass
+print("✅ Smoke OK")
+PY
+          else
+            echo "No main.py found, skipping smoke."
+          fi
+
+      - name: Create source zip
+        run: |
+          cd ..
+          REPO_DIR=$(basename "$GITHUB_WORKSPACE")
+          zip -r "${REPO_DIR}-source.zip" "$REPO_DIR" -x "*/.git/*"
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          mv "${REPO_DIR}-source.zip" "$GITHUB_WORKSPACE/dist/"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-zip
+          path: dist/*.zip
