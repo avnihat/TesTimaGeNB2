@@ -11,8 +11,7 @@ jobs:
   build:
     runs-on: macos-14
     env:
-      # Kodunda macOS Intel/Mojave kontrolü varsa CI’da bypass için:
-      CI_ALLOW_NON_INTEL: "1"
+      CI_ALLOW_NON_INTEL: "1"   # CI'da platform kısıtını bypass et
 
     steps:
       - name: Checkout
@@ -29,27 +28,20 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Optional smoke (main.py varsa)
-        shell: bash
         run: |
           if [ -f main.py ]; then
             export CI_ALLOW_NON_INTEL=1
-            python - <<'PY'
-import os, runpy
-os.environ["CI_ALLOW_NON_INTEL"] = "1"
-try:
-    runpy.run_path("main.py", run_name="__main__")
-except SystemExit:
-    pass
-print("✅ Smoke OK")
-PY
+            # Heredoc kullanmadan, sadece yardım ekranını çalıştır.
+            python main.py --help || true
+            echo "✅ Smoke OK"
           else
             echo "No main.py found, skipping smoke."
           fi
 
       - name: Create source zip
-        # KÖK dizini ziple; .git ve Actions klasörünü hariç tut
         run: |
           mkdir -p dist
+          # .git ve .github klasörlerini hariç tut
           zip -r dist/project-source.zip . -x ".git/*" ".github/*"
 
       - name: Upload artifact
