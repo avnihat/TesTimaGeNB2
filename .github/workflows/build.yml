@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: macos-14
     env:
-      # CI'da platform kısıtını (Intel Mojave+) bypass etmek için.
+      # Kodunda macOS Intel/Mojave kontrolü varsa CI’da bypass için:
       CI_ALLOW_NON_INTEL: "1"
 
     steps:
@@ -23,15 +23,17 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install dependencies
+      - name: Install dependencies (optional)
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Optional smoke test
+      - name: Optional smoke (main.py varsa)
+        shell: bash
         run: |
           if [ -f main.py ]; then
-            python - << 'PY'
+            export CI_ALLOW_NON_INTEL=1
+            python - <<'PY'
 import os, runpy
 os.environ["CI_ALLOW_NON_INTEL"] = "1"
 try:
@@ -45,15 +47,13 @@ PY
           fi
 
       - name: Create source zip
+        # KÖK dizini ziple; .git ve Actions klasörünü hariç tut
         run: |
-          cd ..
-          REPO_DIR=$(basename "$GITHUB_WORKSPACE")
-          zip -r "${REPO_DIR}-source.zip" "$REPO_DIR" -x "*/.git/*"
-          mkdir -p "$GITHUB_WORKSPACE/dist"
-          mv "${REPO_DIR}-source.zip" "$GITHUB_WORKSPACE/dist/"
+          mkdir -p dist
+          zip -r dist/project-source.zip . -x ".git/*" ".github/*"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: project-zip
-          path: dist/*.zip
+          path: dist/project-source.zip
