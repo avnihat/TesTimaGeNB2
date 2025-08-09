@@ -1,0 +1,9 @@
+Pillow>=10.0.0
+imagehash>=4.3.1
+opencv-python>=4.9.0.80
+reportlab>=4.1.0
+qrcode>=7.4.2
+PyQt5>=5.15.10
+numpy>=1.26.0
+# Optional: enable if you actually use a TF model file
+# tensorflow>=2.15.0
