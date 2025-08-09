@@ -1,0 +1,38 @@
+name: Build macOS app on hosted runner (ARM/universal)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-14
+    env:
+      CI_ALLOW_NON_INTEL: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.11 (universal2 denenecek)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip wheel setuptools
+          pip install -r requirements.txt
+          pip install pyinstaller==6.6.0
+
+      - name: Build .app (ARM/universal denemesi)
+        run: |
+          pyinstaller --noconfirm --clean --windowed --name TesTimaGeNB gui.py
+          cd dist
+          ditto -c -k --sequesterRsrc --keepParent TesTimaGeNB/TesTimaGeNB.app TesTimaGeNB-macos.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TesTimaGeNB-macos
+          path: dist/TesTimaGeNB-macos.zip
