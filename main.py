@@ -1,9 +1,6 @@
-import sys
-import platform
 import os
 if not os.environ.get("CI_ALLOW_NON_INTEL"):
     check_platform()
-
 def check_platform():
     system = platform.system()
     machine = platform.machine()
